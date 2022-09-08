@@ -1,0 +1,1 @@
+String applink = "https://abzeno.missolution.id/";
