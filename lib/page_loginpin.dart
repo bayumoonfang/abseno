@@ -4,12 +4,15 @@
 
 import 'dart:convert';
 
+import 'package:abseno/page_home.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'helper/app_helper.dart';
 import 'helper/app_link.dart';
 import 'helper/page_route.dart';
@@ -23,6 +26,14 @@ class PageLoginPIN extends StatefulWidget{
 
 
 class _PageLoginPIN extends State<PageLoginPIN> {
+
+  FocusNode myFocusNode1;
+  FocusNode myFocusNode2;
+  FocusNode myFocusNode3;
+  FocusNode myFocusNode4;
+  FocusNode myFocusNode5;
+  FocusNode myFocusNode6;
+
   final _verif1 = TextEditingController();
   final _verif2 = TextEditingController();
   final _verif3 = TextEditingController();
@@ -34,12 +45,13 @@ class _PageLoginPIN extends State<PageLoginPIN> {
   return;}showerror(String txtError){AppHelper().showFlushBarerror(context, txtError);return;}
 
   proses_login() async {
+    EasyLoading.show(status: "Loading...");
     if(_verif1.text.isEmpty || _verif2.text.isEmpty || _verif3.text.isEmpty || _verif4.text.isEmpty || _verif5.text.isEmpty ||
         _verif6.text.isEmpty) {
       showerror("PIN tidak lengkap");
       return false;
     }
-    final response = await http.post(applink+"mobile/api_mobile.php?act=proses_login", body: {
+    final response = await http.post(applink+"mobile/api_mobile.php?act=login", body: {
       "login_pin": _verif1.text+_verif2.text+_verif3.text+_verif4.text+_verif5.text+_verif6.text,
       "login_email": widget.getEmail.toString()
     }).timeout(Duration(seconds: 10),onTimeout: (){
@@ -50,18 +62,66 @@ class _PageLoginPIN extends State<PageLoginPIN> {
 
     Map data = jsonDecode(response.body);
     if(data["message"] != '') {
+      EasyLoading.dismiss();
       if(data["message"] == '0') {
-        showsuccess("Mohon maaf, password salah");
-      } else if(data["message"] == '1') {
-        showsuccess("Mohon maaf, user anda sudah tidak aktif");
+        showsuccess("Mohon maaf, email anda sudah tidak aktif");
+        return false;
+      } else if(data["message"] == '2') {
+        showsuccess("Mohon maaf, password anda salah");
+        return false;
       } else {
-        //savepref(widget.getEmail, data["karyawan_no"].toString(),)
-        //Navigator.pushReplacement(context, ExitPage(page: PageLoginPIN(_emailq.text)));
+        savePref(widget.getEmail, data["username"].toString(), data["karyawan_id"].toString(), data["karyawan_nama"].toString(), data["karyawan_no"].toString());
+        Navigator.pushReplacement(context, ExitPage(page: Home()));
       }
     }
+  }
+
+
+
+  savePref(
+      String val_email,
+      String val_username,
+      String val_karyawanid,
+      String val_karyawannama,
+      String val_karyawanno) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      //preferences.setInt("value", value);
+      preferences.setString("email", val_email);
+      preferences.setString("username", val_username);
+      preferences.setString("karyawan_id", val_karyawanid);
+      preferences.setString("karyawan_nama", val_karyawannama);
+      preferences.setString("karyawan_no", val_karyawanno);
+      preferences.commit();
+    });
+
 
   }
 
+
+
+  void initState() {
+    myFocusNode1 = new FocusNode();
+    myFocusNode2 = new FocusNode();
+    myFocusNode3 = new FocusNode();
+    myFocusNode4 = new FocusNode();
+    myFocusNode5 = new FocusNode();
+    myFocusNode6 = new FocusNode();
+    //myFocusNode.addListener(() => print('focusNode updated: hasFocus: ${myFocusNode.hasFocus}'));
+  }
+
+
+  clearPin() {
+    _verif1.clear();
+    _verif2.clear();
+    _verif3.clear();
+    _verif4.clear();
+    _verif5.clear();
+    _verif6.clear();
+    setState(() {
+      FocusScope.of(context).requestFocus(myFocusNode1);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +129,17 @@ class _PageLoginPIN extends State<PageLoginPIN> {
        focusNode: FocusNode(),
      onKey: (event) {
        if(event.isKeyPressed(LogicalKeyboardKey.backspace)){
-
+          if (_verif2.text == "") {
+            FocusScope.of(context).requestFocus(myFocusNode1);
+          } else if (_verif3.text == "") {
+            FocusScope.of(context).requestFocus(myFocusNode2);
+          } else if (_verif4.text == "") {
+            FocusScope.of(context).requestFocus(myFocusNode3);
+          } else if (_verif5.text == "") {
+            FocusScope.of(context).requestFocus(myFocusNode4);
+          } else if (_verif6.text == "") {
+            FocusScope.of(context).requestFocus(myFocusNode5);
+          }
        }
      },
      child : WillPopScope(child: Scaffold(
@@ -109,7 +179,9 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                              SizedBox(
                                height: 28,
                                width: 32,
+
                                child: TextField(
+                                 focusNode: myFocusNode1,
                                  autofocus: true,
                                  controller: _verif1,
                                  keyboardType: TextInputType.number,
@@ -118,7 +190,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                      FocusScope.of(context).nextFocus();
                                    }
                                  },
-                                 style: Theme.of(context).textTheme.headline4,
+                                 style: GoogleFonts.roboto(fontSize: 35),
                                  textAlign: TextAlign.center,
                                  inputFormatters: [
                                    LengthLimitingTextInputFormatter(1),
@@ -131,6 +203,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                height: 28,
                                width: 32,
                                child: TextField(
+                                 focusNode: myFocusNode2,
                                  controller: _verif2,
                                  keyboardType: TextInputType.number,
                                  onChanged: (value) {
@@ -140,7 +213,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                      FocusScope.of(context).previousFocus();
                                    }
                                  },
-                                 style: Theme.of(context).textTheme.headline4,
+                                 style: GoogleFonts.roboto(fontSize: 35),
                                  textAlign: TextAlign.center,
                                  inputFormatters: [
                                    LengthLimitingTextInputFormatter(1),
@@ -153,6 +226,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                height: 28,
                                width: 32,
                                child: TextField(
+                                 focusNode: myFocusNode3,
                                  controller: _verif3,
                                  keyboardType: TextInputType.number,
                                  onChanged: (value) {
@@ -162,7 +236,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                      FocusScope.of(context).previousFocus();
                                    }
                                  },
-                                 style: Theme.of(context).textTheme.headline4,
+                                 style: GoogleFonts.roboto(fontSize: 35),
                                  textAlign: TextAlign.center,
                                  inputFormatters: [
                                    LengthLimitingTextInputFormatter(1),
@@ -175,6 +249,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                height: 28,
                                width: 32,
                                child: TextField(
+                                 focusNode: myFocusNode4,
                                  controller: _verif4,
                                  keyboardType: TextInputType.number,
                                  onChanged: (value) {
@@ -184,7 +259,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                      FocusScope.of(context).previousFocus();
                                    }
                                  },
-                                 style: Theme.of(context).textTheme.headline4,
+                                 style: GoogleFonts.roboto(fontSize: 35),
                                  textAlign: TextAlign.center,
                                  inputFormatters: [
                                    LengthLimitingTextInputFormatter(1),
@@ -197,6 +272,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                height: 28,
                                width: 32,
                                child: TextField(
+                                 focusNode: myFocusNode5,
                                  controller: _verif5,
                                  keyboardType: TextInputType.number,
                                  onChanged: (value) {
@@ -206,7 +282,7 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                      FocusScope.of(context).previousFocus();
                                    }
                                  },
-                                 style: Theme.of(context).textTheme.headline4,
+                                 style: GoogleFonts.roboto(fontSize: 35),
                                  textAlign: TextAlign.center,
                                  inputFormatters: [
                                    LengthLimitingTextInputFormatter(1),
@@ -219,9 +295,10 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                                height: 28,
                                width: 32,
                                child: TextField(
+                                 focusNode: myFocusNode6,
                                  controller: _verif6,
                                  keyboardType: TextInputType.number,
-                                 style: Theme.of(context).textTheme.headline3,
+                                 style: GoogleFonts.roboto(fontSize: 35),
                                  onChanged: (value) {
                                    if(value.length == 1) {
                                      proses_login();
@@ -243,6 +320,21 @@ class _PageLoginPIN extends State<PageLoginPIN> {
                      )
 
                      ,)),
+
+               Center(
+                 child : Padding(
+                   padding: const EdgeInsets.only(top:30),
+                   child : Container(
+                     width: 100,
+                     child : OutlinedButton(
+                         child : Text("Clear"),
+                       onPressed: (){
+                           clearPin();
+                       },
+                     )
+                   )
+                 )
+               )
 
              ],
            ),

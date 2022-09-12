@@ -1,3 +1,5 @@
+import 'package:abseno/page_cekme.dart';
+import 'package:abseno/page_home.dart';
 import 'package:abseno/page_login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -16,7 +18,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: PageLogin(),
+      home: PageCheck(),
       builder: EasyLoading.init(),
       //home : Login()
     );
